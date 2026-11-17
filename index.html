@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fil"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Super Office AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff3d1;--fg:#2b1b00;--card:#fff;--bd:#2b1b00;--ac:#e52521;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14101f;--fg:#f5ecd0;--card:#241c38;--bd:#f5ecd0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14101f;--fg:#f5ecd0;--card:#241c38;--bd:#f5ecd0;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;padding:12px;background:var(--bg);color:var(--fg);font:10px/1.7 "Press Start 2P","Courier New",monospace}
+h1{font-size:14px;margin:4px 0 10px;color:var(--ac)}
+.wrap{overflow-x:auto;border:3px solid var(--bd);background:#87ceeb;max-width:960px}
+canvas{display:block;width:100%;min-width:760px;height:auto}
+.bar{display:flex;gap:8px;max-width:960px;margin:10px 0;flex-wrap:wrap}
+input{flex:1;min-width:200px;padding:10px;font:inherit;background:var(--card);color:var(--fg);border:3px solid var(--bd)}
+button{padding:10px 14px;font:inherit;background:var(--ac);color:#fff;border:3px solid var(--bd);cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+#st{max-width:960px;margin:6px 0}
+#log{max-width:960px;background:var(--card);border:3px solid var(--bd);padding:8px;min-height:90px}
+#log div{margin:2px 0}
+@media(max-width:700px){canvas{min-width:0}.dock{position:sticky;bottom:0;z-index:5;background:var(--bg);padding-bottom:6px;border-top:3px solid var(--bd)}.bar{margin:6px 0}#st{margin:2px 0}}
+</style></head><body>
+<h1>🍄 SUPER OFFICE AI</h1>
+<div class="wrap"><canvas id="c" width="960" height="600"></canvas></div>
+<div class="dock"><div class="bar"><input id="t" placeholder="Hal. Gumawa ng logo para sa tindahan" maxlength="80"><button id="b">▶ MAG-UTOS</button></div>
+<div id="st">Status: Chill mode. Naglalaro at kumakain ang team.</div></div>
+<div id="log"></div>
+<script>
+const cv=document.getElementById("c"),g=cv.getContext("2d");
+const M=matchMedia("(max-width:700px)").matches;
+const FH=150,W=M?480:960,N=M?7:4,H=N*FH,EX=M?440:480,CW=M?64:80;
+cv.width=W;cv.height=H;
+matchMedia("(max-width:700px)").addEventListener("change",e=>{if(e.matches!==M)location.reload()});
+const rr=(a,b)=>a+Math.random()*(b-a),pk=a=>a[Math.random()*a.length|0];
+const r=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(x|0,y|0,w|0,h|0)};
+const txt=(s,x,y,sz,c,al)=>{g.font="bold "+sz+"px monospace";g.textAlign=al||"left";g.fillStyle=c;g.fillText(s,x,y)};
+const R=[
+{f:0,x:0,w:400,n:"BOSS OFFICE",c:"#f4d58d",t:"boss"},
+{f:0,x:560,w:400,n:"PLAN TABLE",c:"#b8d8f0",t:"plan"},
+{f:1,x:0,w:400,n:"RESEARCH LAB",c:"#c5f0d0",t:"lab"},
+{f:1,x:560,w:400,n:"DESIGNER OFFICE",c:"#f3c6e8",t:"des"},
+{f:2,x:0,w:400,n:"PLANNING OFFICE",c:"#ffe0a8",t:"pln"},
+{f:2,x:560,w:400,n:"GAME ROOM",c:"#c9b8f5",t:"game"},
+{f:3,x:0,w:960,n:"CANTEEN",c:"#ffd0c0",t:"can"}];
+if(M)R.forEach((o,i)=>{o.f=i;o.x=0;o.w=400});
+const rm=t=>R.find(o=>o.t===t);
+const roomAt=(f,x)=>R.find(o=>o.f===f&&x>=o.x&&x<o.x+o.w);
+const HOME={lab:{f:rm("lab").f,x1:rm("lab").x+60,x2:rm("lab").x+350},des:{f:rm("des").f,x1:rm("des").x+60,x2:rm("des").x+340},pln:{f:rm("pln").f,x1:rm("pln").x+60,x2:rm("pln").x+350}};
+const SEAT=i=>rm("plan").x+50+i*55;
+const WL={lab:["Nagre-research…","May nahanap na data!","Test test test…"],des:["Nagdi-disenyo…","Ang cute ng kulay!","Konting pixel pa…"],pln:["Gumagawa ng plano…","Ready na timeline!","Sino bahala dito?"]};
+const CH={can:[["Ang sarap ng adobo!","Oo nga, tanghalian na!"],["Pa-kape naman!","Libre mo ako ha?"],["Ubos na halo-halo!","Hala! Sayang!"]],
+game:[["Rematch sa pool!","Sige, ako mauuna!"],["Ako naman sa console!","Wag mo ko dayain!"],["Nanalo ako! 8-ball!","Swerte lang ’yan!"]],
+oth:[["Nakita mo si boss?","Nasa taas, busy!"],["Ang dami ng task kanina!","Kaya natin ’to!"],["Coin na ba sahod?","Sana! Hahaha"]]};
+const EAT=M?[60,110,160,210,270,300,340]:[90,150,200,270,300,330,680,710,820,850];
+const A=[["Toad","#e52521","#f1f1f1","lab"],["Luigi","#2ca02c","#2255cc","lab"],["Peach","#ff8fc7","#ff6fb0","des","#ffd23f"],["Daisy","#ff9a2e","#ffb347","des","#c85a17"],["Yoshi","#4cd964","#fff","pln"],["Wario","#f5d90a","#7b3fa0","pln"]].map((d,i)=>{
+const h=HOME[d[3]];return{n:d[0],hat:d[1],sh:d[2],role:d[3],hair:d[4],f:h.f,x:rr(h.x1,h.x2),dir:1,w:0,mv:false,goal:null,t:rr(0,3),cd:rr(2,8),bub:"",bt:0,ride:false,hold:false,working:false,prog:0,dur:8,later:null}});
+const B={n:"BOSS",hat:"#e52521",sh:"#2255cc",f:0,x:150,dir:-1,w:0,bub:"",bt:0};
+const say=(a,t,d)=>{a.bub=t.slice(0,32);a.bt=d||3.2};
+const E={f:N-1,dest:[],wait:0,mv:false,open(){return!this.mv},add(f){if(!this.dest.includes(f)&&!(this.f===f&&!this.mv))this.dest.push(f)}};
+const task={on:false,ph:0,t:0,txt:""};let done=0,coins=[];
+const logEl=document.getElementById("log"),st=document.getElementById("st"),btn=document.getElementById("b"),inp=document.getElementById("t");
+function log(s){const d=document.createElement("div");d.textContent=s;logEl.prepend(d);while(logEl.children.length>6)logEl.lastChild.remove()}
+function setGoal(a,G){a.goal=G;if(a.ride)E.add(G.f)}
+function pick(a){const q=Math.random(),h=HOME[a.role];let G;
+if(q<.26)G={f:h.f,x:rr(h.x1,h.x2),k:"work"};
+else if(q<.5){const o=rm("game");G={f:o.f,x:rr(o.x+40,o.x+340),k:"play"}}
+else if(q<.74)G={f:rm("can").f,x:pk(EAT),k:"eat"};
+else if(q<.88){const b=pk(A);if(b===a||b.ride)G={f:rm("can").f,x:pk(EAT),k:"eat"};else G={f:b.f,x:Math.max(20,Math.min(W-20,b.x+rr(-40,40))),k:"chat"};}
+else{const o=pk(R.filter(o=>o.t!=="can"));G={f:o.f,x:o.x+rr(40,o.w-40),k:"stroll"}}
+G.cb=a=>{const k=G.k;if(Math.random()<.7){if(k==="eat")say(a,pk(["Nom nom nom!","Kain muna!","Sarap!"]));else if(k==="play")say(a,pk(["Go go go!","Yehey!","Ang galing ko!"]));else if(k==="work")say(a,pk(WL[a.role]))}};
+setGoal(a,G)}
+function upd(a,dt){
+const sp=(task.on?115:55)*dt;a.mv=false;
+if(a.bt>0){a.bt-=dt;if(a.bt<=0)a.bub=""}
+a.cd-=dt;
+if(a.later){a.later[0]-=dt;if(a.later[0]<=0){say(a,a.later[1]);a.later=null}}
+if(a.working&&a.hold){a.prog=Math.min(1,a.prog+dt/a.dur);if(a.bt<=0&&Math.random()<dt*.5)say(a,pk(WL[a.role]),2.6)}
+if(a.ride){a.x=EX;a.f=E.f;if(E.open()&&Number.isInteger(E.f)&&E.f===a.goal.f){a.ride=false}return}
+const G=a.goal;
+if(G){
+ if(a.f!==G.f){
+  if(Math.abs(a.x-EX)>3){const d=Math.sign(EX-a.x);a.x+=d*sp;a.dir=d;a.mv=true}
+  else if(E.open()&&E.f===a.f){a.ride=true;E.add(G.f);E.wait=Math.max(E.wait,.9)}
+  else E.add(a.f);
+ }else if(Math.abs(a.x-G.x)>3){const d=Math.sign(G.x-a.x);a.x+=d*sp;a.dir=d;a.mv=true}
+ else{a.goal=null;a.t=rr(4,9);if(G.cb)G.cb(a)}
+}else if(!a.hold){a.t-=dt;if(a.t<=0)pick(a)}
+if(a.mv)a.w+=dt}
+function updE(dt){
+if(E.mv){const t=E.dest[0],d=t-E.f,s=(M?1.8:1.1)*dt;if(Math.abs(d)<=s){E.f=t;E.mv=false;E.wait=1.2;E.dest.shift()}else E.f+=Math.sign(d)*s}
+else{E.wait-=dt;if(E.wait<=0&&E.dest.length){while(E.dest[0]===E.f)E.dest.shift();if(E.dest.length)E.mv=true}}}
+function chatter(){
+if(task.on)return;
+for(let i=0;i<A.length;i++)for(let j=i+1;j<A.length;j++){const a=A[i],b=A[j];
+if(a.ride||b.ride||a.f!==b.f||a.goal||b.goal||a.cd>0||b.cd>0||Math.abs(a.x-b.x)>60)continue;
+const o=roomAt(a.f,a.x),k=o&&o.t==="can"?"can":o&&o.t==="game"?"game":"oth",p=pk(CH[k]);
+say(a,p[0]);b.later=[1.5,p[1]];a.cd=b.cd=rr(9,16)}}
+function tick(dt){
+if(!task.on)return;const all=f=>A.every(f);
+if(task.ph===0&&all(a=>a.hold&&!a.goal)){task.ph=1;task.t=0;say(B,"Team! "+task.txt,4);A.forEach(a=>say(a,"Copy boss!",3));log("📋 Briefing sa Plan Table");st.textContent="Status: Meeting sa Plan Table!"}
+else if(task.ph===1){task.t+=dt;if(task.t>3.4){task.ph=2;A.forEach(a=>{a.hold=false;a.prog=0;const h=HOME[a.role];setGoal(a,{f:h.f,x:rr(h.x1,h.x2),cb:a=>{a.hold=true;a.working=true;a.prog=0;a.dur=rr(6,10)}});say(a,pk(["Sige, simulan na!","Takbo na!","Go go go!"]),2)});log("🏃 Nagsitakbuhan na sa kani-kanilang office");st.textContent="Status: Nagtatrabaho ang team!"}}
+else if(task.ph===2&&all(a=>a.prog>=1)){task.ph=3;A.forEach((a,i)=>{a.working=false;a.hold=false;setGoal(a,{f:rm("plan").f,x:SEAT(i),cb:a=>{a.hold=true}});say(a,"Tapos na!",2)});log("✅ Tapos na! Balik sa Plan Table para mag-report");st.textContent="Status: Magrereport sa boss…"}
+else if(task.ph===3&&all(a=>a.hold&&!a.goal)){task.ph=4;task.t=0;say(B,"Magaling! Salamat team!",4);for(let i=0;i<14;i++)coins.push({x:rr(SEAT(0)-10,SEAT(5)+15),y:rm("plan").f*FH+20+rr(0,40),v:rr(20,60),l:2.5});log("🌟 Success: "+task.txt);st.textContent="Status: Task complete! 🎉"}
+else if(task.ph===4){task.t+=dt;if(task.t>3.5){task.on=false;done++;A.forEach(a=>{a.hold=false;a.t=rr(1,3)});btn.disabled=false;st.textContent="Status: Chill mode. Tapos na task: "+done}}}
+function giveTask(){const v=inp.value.trim();if(!v||task.on)return;task.on=true;task.ph=0;task.txt=v;inp.value="";btn.disabled=true;
+log("📢 Boss: "+v);if(M)scrollTo({top:cv.getBoundingClientRect().top+scrollY+rm("plan").f*FH*cv.clientWidth/W-60,behavior:"smooth"});st.textContent="Status: SITAKBUHAN! Papunta na sa Plan Table";say(B,"May task! "+v,3);
+A.forEach((a,i)=>{a.hold=false;a.working=false;setGoal(a,{f:rm("plan").f,x:SEAT(i),cb:a=>{a.hold=true;say(a,"Andito na!",2)}});say(a,pk(["Hala! May task!","Late na ako!","Takbo!","Wait lang!"]),2.5)})}
+btn.onclick=giveTask;inp.onkeydown=e=>{if(e.key==="Enter")giveTask()};
+function person(px,gy,o,bob){
+g.save();g.translate(px|0,(gy+bob)|0);g.scale(1.3*o.dir,1.3);
+const s=Math.sin(o.w*16)>0?1:-1,m=o.mv;
+r(-6,-10+(m&&s>0?-2:0),5,10,"#3b2a7a");r(1,-10+(m&&s<0?-2:0),5,10,"#3b2a7a");
+r(-7,-6,6,4,"#5a2d0c");r(1,-6,6,4,"#5a2d0c");
+if(o.hair)r(-9,-34,5,13,o.hair);
+r(-7,-22,14,13,o.sh);r(-1,-20,2,2,"#ffd23f");
+r(-10,-21,3,9,o.sh);r(7,-21,3,9,o.sh);r(-10,-13,3,3,"#ffd2a8");r(7,-13,3,3,"#ffd2a8");
+r(-6,-32,12,11,"#ffd2a8");r(-7,-38,14,6,o.hat);r(1,-33,8,3,o.hat);r(-2,-37,4,3,"#fff");
+r(2,-29,2,3,"#000");r(1,-25,6,2,"#4a2a0a");
+g.restore();
+txt(o.n,px,gy-62+bob,M?13:10,"#2b1b00","center")}
+function bubble(o,gy){if(!o.bub)return;const sz=M?14:11,h=M?23:18;g.font="bold "+sz+"px monospace";const w=g.measureText(o.bub).width+14;
+const x=Math.max(w/2+4,Math.min(W-w/2-4,o.x)),y=gy-98;
+r(x-w/2-2,y-2,w+4,h+4,"#222");r(x-w/2,y,w,h,"#fff");r(o.x-4,y+h,8,6,"#222");r(o.x-2,y+h,4,4,"#fff");txt(o.bub,x,y+h-5,sz,"#222","center")}
+function furn(o){const b=o.f*FH,x=o.x,gy=b+FH-12;
+switch(o.t){
+case"boss":person(x+170,gy,B,0);
+r(x+240,b+28,26,26,"#f5c542");txt("?",x+253,b+48,18,"#8b5a2b","center");
+r(x+300,b+22,44,56,"#e52521");txt("M",x+322,b+60,30,"#fff","center");
+r(x+60,gy-30,130,8,"#8b5a2b");r(x+66,gy-22,8,22,"#6b3f1b");r(x+176,gy-22,8,22,"#6b3f1b");r(x+80,gy-54,34,24,"#222");r(x+83,gy-51,28,18,"#6ee7ff");break;
+case"plan":r(x+90,b+20,220,56,"#fff");r(x+90,b+20,220,3,"#888");r(x+105,b+34,90,4,"#e52521");r(x+105,b+48,140,4,"#2255cc");r(x+105,b+62,60,4,"#2ca02c");
+for(let i=0;i<6;i++)r(x+44+i*55,gy-18,12,18,"#c0392b");
+r(x+30,gy-32,340,9,"#8b5a2b");r(x+50,gy-23,8,23,"#6b3f1b");r(x+342,gy-23,8,23,"#6b3f1b");break;
+case"lab":r(x+30,gy-28,150,8,"#cfd8dc");r(x+40,gy-20,8,20,"#90a4ae");r(x+160,gy-20,8,20,"#90a4ae");
+r(x+50,gy-46,10,18,"#2ca02c");r(x+80,gy-42,10,14,"#e52521");r(x+110,gy-48,12,20,"#4aa3ff");
+r(x+230,gy-28,130,8,"#cfd8dc");r(x+250,gy-56,36,28,"#222");r(x+253,gy-53,30,22,"#7dffa0");
+r(x+300,b+30,50,40,"#fff");txt("DNA",x+325,b+56,12,"#2ca02c","center");break;
+case"des":r(x+50,b+36,70,60,"#fff");r(x+56,b+44,20,20,"#e52521");r(x+82,b+52,26,16,"#4aa3ff");r(x+70,gy-40,6,40,"#8b5a2b");
+r(x+230,gy-28,140,8,"#8b5a2b");r(x+250,gy-72,100,44,"#222");r(x+254,gy-68,92,36,"#ffb3de");r(x+270,gy-60,20,20,"#fff");r(x+300,gy-56,30,12,"#ffd23f");break;
+case"pln":r(x+60,b+22,200,60,"#d9a05b");[["#ffe14a",75],["#ff8fc7",120],["#7fe0ff",165],["#9fff8a",210]].forEach(s=>r(x+s[1],b+36,26,22,s[0]));
+r(x+250,gy-28,130,8,"#8b5a2b");r(x+280,gy-44,36,16,"#ddd");r(x+284,gy-41,28,10,"#4aa3ff");break;
+case"game":r(x+30,gy-36,140,12,"#8b5a2b");r(x+34,gy-36,132,8,"#1f8f4a");r(x+60,gy-40,6,5,"#fff");r(x+100,gy-40,6,5,"#e52521");r(x+130,gy-40,6,5,"#ffd23f");
+r(x+40,gy-24,8,24,"#6b3f1b");r(x+152,gy-24,8,24,"#6b3f1b");
+r(x+240,b+30,100,56,"#222");r(x+244,b+34,92,48,"#3b6cff");r(x+280,b+50,16,16,"#f5c542");
+r(x+230,gy-30,120,30,"#c0392b");r(x+270,gy-38,40,8,"#ddd");break;
+case"can":r(x+30,gy-44,178,6,"#a35f1b");r(x+34,gy-38,170,38,"#d9822b");r(x+60,b+24,110,30,"#222");txt("MENU",x+115,b+45,14,"#ffd23f","center");
+[250,650,780].filter(t=>t<o.w-60).forEach(t=>{r(t,gy-30,70,7,"#8b5a2b");r(t+8,gy-23,6,23,"#6b3f1b");r(t+56,gy-23,6,23,"#6b3f1b")});
+const px=M?340:884;r(px,gy-56,44,56,"#2ca02c");r(px-6,gy-66,56,12,"#1f8f1f");break}}
+function draw(){
+g.clearRect(0,0,W,H);r(0,0,W,H,"#87ceeb");
+R.forEach(o=>{const b=o.f*FH;r(o.x,b,o.w,FH-12,o.c);r(o.x,b+FH-42,o.w,30,"rgba(0,0,0,.07)")});
+r(400,0,M?80:160,H,"#59606e");r(EX-2,0,4,H,"#3a3f4a");
+R.forEach(furn);
+for(let f=0;f<N;f++){const gy=f*FH+FH-12;r(0,gy,W,12,"#b5651d");for(let x=0;x<W;x+=24){r(x,gy,2,12,"#7a4210")}r(0,gy+5,W,2,"#7a4210");r(0,f*FH,W,3,"#2b1b00")}
+r(0,H-3,W,3,"#2b1b00");
+R.forEach(o=>{const s=M?o.n:(4-o.f)+"F "+o.n,z=M?13:11;r(o.x+6,o.f*FH+6,s.length*(M?9:8)+12,M?20:16,"#2b1b00");txt(s,o.x+12,o.f*FH+(M?21:18),z,"#fff")});
+const cy=E.f*FH+22,ch=FH-36;
+const cx=EX-CW/2,iw=CW-12;r(cx-4,cy-2,CW+8,ch+4,"#2b1b00");r(cx,cy,CW,ch,"#f5c542");r(cx+6,cy+6,iw,ch-8,"#2b2f3a");
+if(E.open()){r(cx+6,cy+6,10,ch-8,"#d9a600");r(cx+6+iw-10,cy+6,10,ch-8,"#d9a600")}else{r(cx+6,cy+6,iw/2,ch-8,"#e0b020");r(EX,cy+6,iw/2,ch-8,"#e0b020");r(EX-1,cy+6,2,ch-8,"#7a5a00")}
+txt("ELEV",EX,cy-6,10,"#fff","center");
+const all=[B].concat(A);
+A.forEach(a=>{const gy=a.f*FH+FH-12;person(a.x,gy,a,a.mv?Math.abs(Math.sin(a.w*16))*-2:(a.working&&a.hold?Math.sin(a.w+performance.now()/90)*-2:0));
+if(a.working&&a.hold){r(a.x-21,gy-74,42,7,"#222");r(a.x-19,gy-72,38*a.prog,3,"#4cd964")}});
+all.forEach(o=>bubble(o,o.f*FH+FH-12));
+coins.forEach(c=>{g.fillStyle="#ffd23f";g.beginPath();g.arc(c.x,c.y,6,0,7);g.fill();g.fillStyle="#b8860b";g.fillRect(c.x-1,c.y-4,2,8)})}
+let last=performance.now();
+function loop(n){const dt=Math.min(.05,(n-last)/1000);last=n;
+updE(dt);A.forEach(a=>upd(a,dt));chatter();tick(dt);
+B.bt>0&&(B.bt-=dt,B.bt<=0&&(B.bub=""));
+if(!task.on&&B.bt<=0&&Math.random()<dt*.04)say(B,pk(["Kape muna…","Sino may report?","Mario time!"]),3);
+coins=coins.filter(c=>(c.y+=c.v*dt,c.l-=dt,c.l>0));
+draw();requestAnimationFrame(loop)}
+log("🏢 Bukas na ang Super Office! Mag-utos ka na, Boss.");
+requestAnimationFrame(loop);
+</script></body></html>
