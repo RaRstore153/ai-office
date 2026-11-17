@@ -19,6 +19,7 @@ button:disabled{opacity:.5;cursor:wait}
 #st{max-width:960px;margin:6px 0}
 #log{max-width:960px;background:var(--card);border:3px solid var(--bd);padding:8px;min-height:90px}
 #log div{margin:2px 0}
+.rep{max-width:960px;margin:10px 0}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}.tabs button{padding:6px 8px;font-size:9px;background:var(--card);color:var(--fg)}#out{white-space:pre-wrap;background:var(--card);color:var(--fg);border:3px solid var(--bd);padding:10px;min-height:120px;margin:0 0 6px;font:13px/1.6 system-ui,sans-serif}
 @media(max-width:700px){canvas{min-width:0}.dock{position:sticky;bottom:0;z-index:5;background:var(--bg);padding-bottom:6px;border-top:3px solid var(--bd)}.bar{margin:6px 0}#st{margin:2px 0}}
 </style></head><body>
 <h1>🍄 SUPER OFFICE AI</h1>
@@ -26,6 +27,7 @@ button:disabled{opacity:.5;cursor:wait}
 <div class="dock"><div class="bar"><input id="t" placeholder="Hal. Gumawa ng logo para sa tindahan" maxlength="80"><button id="b">▶ MAG-UTOS</button></div>
 <div id="st">Status: Chill mode. Naglalaro at kumakain ang team.</div></div>
 <div id="log"></div>
+<div id="rep" class="rep"><div class="tabs" id="tabs"></div><pre id="out">Wala pang report. Mag-utos ka muna sa team.</pre><button id="cp">COPY</button></div>
 <script>
 const cv=document.getElementById("c"),g=cv.getContext("2d");
 const M=matchMedia("(max-width:700px)").matches;
@@ -75,7 +77,7 @@ const sp=(task.on?115:55)*dt;a.mv=false;
 if(a.bt>0){a.bt-=dt;if(a.bt<=0)a.bub=""}
 a.cd-=dt;
 if(a.later){a.later[0]-=dt;if(a.later[0]<=0){say(a,a.later[1]);a.later=null}}
-if(a.working&&a.hold){a.prog=Math.min(1,a.prog+dt/a.dur);if(a.bt<=0&&Math.random()<dt*.5)say(a,pk(WL[a.role]),2.6)}
+if(a.working&&a.hold){if(a.ext)a.prog=a.done?Math.min(1,a.prog+dt*1.5):(a.run?Math.min(.9,a.prog+dt/20):0);else a.prog=Math.min(1,a.prog+dt/a.dur);if(a.bt<=0&&Math.random()<dt*.5)say(a,a.ext&&!a.run&&!a.done?"Hinihintay ang input…":pk(WL[a.role]),2.6)}
 if(a.ride){a.x=EX;a.f=E.f;if(E.open()&&Number.isInteger(E.f)&&E.f===a.goal.f){a.ride=false}return}
 const G=a.goal;
 if(G){
@@ -101,11 +103,37 @@ if(!task.on)return;const all=f=>A.every(f);
 if(task.ph===0&&all(a=>a.hold&&!a.goal)){task.ph=1;task.t=0;say(B,"Team! "+task.txt,4);A.forEach(a=>say(a,"Copy boss!",3));log("📋 Briefing sa Plan Table");st.textContent="Status: Meeting sa Plan Table!"}
 else if(task.ph===1){task.t+=dt;if(task.t>3.4){task.ph=2;A.forEach(a=>{a.hold=false;a.prog=0;const h=HOME[a.role];setGoal(a,{f:h.f,x:rr(h.x1,h.x2),cb:a=>{a.hold=true;a.working=true;a.prog=0;a.dur=rr(6,10)}});say(a,pk(["Sige, simulan na!","Takbo na!","Go go go!"]),2)});log("🏃 Nagsitakbuhan na sa kani-kanilang office");st.textContent="Status: Nagtatrabaho ang team!"}}
 else if(task.ph===2&&all(a=>a.prog>=1)){task.ph=3;A.forEach((a,i)=>{a.working=false;a.hold=false;setGoal(a,{f:rm("plan").f,x:SEAT(i),cb:a=>{a.hold=true}});say(a,"Tapos na!",2)});log("✅ Tapos na! Balik sa Plan Table para mag-report");st.textContent="Status: Magrereport sa boss…"}
-else if(task.ph===3&&all(a=>a.hold&&!a.goal)){task.ph=4;task.t=0;say(B,"Magaling! Salamat team!",4);for(let i=0;i<14;i++)coins.push({x:rr(SEAT(0)-10,SEAT(5)+15),y:rm("plan").f*FH+20+rr(0,40),v:rr(20,60),l:2.5});log("🌟 Success: "+task.txt);st.textContent="Status: Task complete! 🎉"}
+else if(task.ph===3&&all(a=>a.hold&&!a.goal)){task.ph=4;task.t=0;say(B,"Magaling! Basahin ang report!",4);for(let i=0;i<14;i++)coins.push({x:rr(SEAT(0)-10,SEAT(5)+15),y:rm("plan").f*FH+20+rr(0,40),v:rr(20,60),l:2.5});log("🌟 Success: "+task.txt);cur="fin";showRep();document.getElementById("rep").scrollIntoView({behavior:"smooth",block:"nearest"});st.textContent="Status: Task complete! 🎉"}
 else if(task.ph===4){task.t+=dt;if(task.t>3.5){task.on=false;done++;A.forEach(a=>{a.hold=false;a.t=rr(1,3)});btn.disabled=false;st.textContent="Status: Chill mode. Tapos na task: "+done}}}
-function giveTask(){const v=inp.value.trim();if(!v||task.on)return;task.on=true;task.ph=0;task.txt=v;inp.value="";btn.disabled=true;
+function giveTask(){const v=inp.value.trim();if(!v||task.on)return;task.on=true;task.ph=0;task.txt=v;inp.value="";btn.disabled=true;startAI();
 log("📢 Boss: "+v);if(M)scrollTo({top:cv.getBoundingClientRect().top+scrollY+rm("plan").f*FH*cv.clientWidth/W-60,behavior:"smooth"});st.textContent="Status: SITAKBUHAN! Papunta na sa Plan Table";say(B,"May task! "+v,3);
 A.forEach((a,i)=>{a.hold=false;a.working=false;setGoal(a,{f:rm("plan").f,x:SEAT(i),cb:a=>{a.hold=true;say(a,"Andito na!",2)}});say(a,pk(["Hala! May task!","Late na ako!","Takbo!","Wait lang!"]),2.5)})}
+let ai=null,rep={},cur="fin";
+const TABS=[["fin","📄 Final"],["plan","📝 Plano"],["res","🔬 Research"],["des","🎨 Design"]];
+const tabsEl=document.getElementById("tabs"),outEl=document.getElementById("out");
+function showRep(){outEl.textContent=rep[cur]||"(Wala pa. Hintayin ang team.)";[...tabsEl.children].forEach(b=>b.style.opacity=b.dataset.k===cur?1:.55)}
+TABS.forEach(([k,l])=>{const b=document.createElement("button");b.textContent=l;b.dataset.k=k;b.onclick=()=>{cur=k;showRep()};tabsEl.append(b)});
+showRep();
+document.getElementById("cp").onclick=()=>{try{navigator.clipboard.writeText(outEl.textContent)}catch(e){}};
+(async()=>{try{ai=await claude.use("sample")}catch(e){}if(ai)log("🤖 Nakakonekta na si Claude sa team!")})();
+const AG=n=>A.find(a=>a.n===n),SUP={Luigi:"Toad",Daisy:"Peach"};
+const L=n=>"\n\nSagutin sa Tagalog/Taglish (o sa wika ng task). Maikli: hanggang "+n+" salita, simpleng bullets o numbering, walang malalaking heading.";
+const STEPS=[
+{k:"plan",who:"Yoshi",tab:"plano",p:t=>"Ikaw si Yoshi, ang Planner ng isang maliit na team. Task ng boss: "+t+"\n\nGumawa ng 4-5 hakbang na plano (numbered, isang linya bawat isa) at sabihin kung sino ang hahawak: Research, Design, o Planning."+L(150)},
+{k:"res",who:"Toad",tab:"research",p:t=>"Ikaw si Toad, ang Researcher. Task ng boss: "+t+"\n\nPlano ng Planner:\n"+(rep.plan||"")+"\n\nMagbigay ng 5-6 mahahalagang ideya, datos o payo para sa task. Wala kang internet, kaya huwag mag-imbento ng eksaktong estadistika o sources; sabihin kung hindi sigurado."+L(150)},
+{k:"des",who:"Peach",tab:"design",p:t=>"Ikaw si Peach, ang Designer. Task ng boss: "+t+"\n\nPlano:\n"+(rep.plan||"")+"\n\nResearch:\n"+(rep.res||"")+"\n\nGumawa ng konkretong creative direction: tema o pangalan, slogan kung bagay, color palette (may hex code), estilo o layout, at 3 ideya."+L(150)},
+{k:"fin",who:"Wario",tab:"final report",p:t=>"Ikaw si Wario, lead ng Planning. Pagsamahin ang gawa ng team sa isang final report para sa boss.\n\nTask: "+t+"\n\nPlano:\n"+(rep.plan||"")+"\n\nResearch:\n"+(rep.res||"")+"\n\nDesign:\n"+(rep.des||"")+"\n\nFormat: Buod (2 linya), Plano, Mga Natuklasan, Disenyo, Susunod na hakbang (3 bullets)."+L(250)}];
+async function runPipeline(){
+for(const s of STEPS){const a=AG(s.who),hs=Object.keys(SUP).filter(k=>SUP[k]===s.who).map(AG);
+a.run=true;hs.forEach(x=>x.run=true);cur=s.k;showRep();let fatal=false;
+try{const r=await ai(s.p(task.txt),{modelTier:"quick",cache:false,onText:({text})=>{rep[s.k]=text;if(cur===s.k)showRep()}});rep[s.k]=r.text}
+catch(e){fatal=e.code==="not_granted"||e.code==="sampling_disabled";rep[s.k]=(e.text||"")+"\n\n⚠️ May problema sa AI ("+(e.code||"error")+"). "+(fatal?"Hindi pinayagan o hindi available ang Claude dito.":"Subukan ulit mamaya.");if(cur===s.k)showRep()}
+a.done=true;hs.forEach(x=>x.done=true);say(a,"Tapos na ang part ko!",3);log("✅ "+a.n+": tapos ang "+s.tab);
+if(fatal)break}
+A.forEach(x=>{x.run=true;x.done=true})}
+function startAI(){rep={};cur="fin";showRep();
+A.forEach(a=>{a.ext=!!ai;a.run=false;a.done=false;a.prog=0});
+if(ai)runPipeline();else{rep.fin="⚠️ Demo mode: walang koneksyon kay Claude sa pagkakabukas na ito. Gumagana ang totoong AI kapag binuksan ang page sa claude.ai link mo.\n\nAnimation lang ito, walang totoong result.";showRep()}}
 btn.onclick=giveTask;inp.onkeydown=e=>{if(e.key==="Enter")giveTask()};
 function person(px,gy,o,bob){
 g.save();g.translate(px|0,(gy+bob)|0);g.scale(1.3*o.dir,1.3);
